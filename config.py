@@ -8,14 +8,15 @@ OUTPUT_DIR = "Output"
 # Префикс для файлов NEData
 NE_DATA_FILE_PREFIX = "NEData"
 
-# Заголовки столбцов для XLSX файла
+# --- Конфигурация для основной информации NE ---
 EXCEL_COLUMNS = [
-    "NE name",
+    "NE Name",
     "NE ID",
     "Creator",
     "Buildtime",
     "Device",
-    "Serial Number"
+    "vrc_ver",
+    "ip"
 ]
 
 def get_output_filename(archive_name):

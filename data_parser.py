@@ -1,72 +1,57 @@
 import re
+from logger_config import logger
 
 class DataParser:
     """Класс для парсинга данных из содержимого NEData файла."""
 
-    def __init__(self, file_content):
+    def __init__(self, file_content): # Убран filename, т.к. не нужен для NE Name (File)
         self.file_content = file_content
         self.parsed_data = {}
 
     def parse(self):
-        """Парсит весь файл и извлекает необходимые данные."""
-        self._parse_cfg_nepara()
-        self._parse_ne_board_info()
-        return self.parsed_data
-
-    def _parse_cfg_nepara(self):
-        """Извлекает данные из блока :cfg-nepara:."""
+        """Парсит основную информацию NE из блока :cfg-nepara:."""
         match = re.search(r':cfg-nepara:\{(.*?)\};', self.file_content, re.DOTALL)
         if match:
             params_str = match.group(1)
             params = self._parse_key_value_pairs(params_str)
-            self.parsed_data["NE name"] = params.get("name", "").strip('"')
+            
+            self.parsed_data["NE Name"] = params.get("name", "").strip('"')
             self.parsed_data["NE ID"] = params.get("neid", "").strip('"')
             self.parsed_data["Creator"] = params.get("creater", "").strip('"')
             self.parsed_data["Buildtime"] = params.get("buildtime", "").strip('"')
             self.parsed_data["Device"] = params.get("device", "").strip('"')
-
-    def _parse_ne_board_info(self):
-        """Извлекает серийные номера из блока NeBoardInfo."""
-        serial_numbers = []
-        # Ищем блок NeBoardInfo
-        board_info_block_match = re.search(r'\[NeBoardInfo\].*?(\s*\{.*?\}\s*\[Board Properties\].*?BarCode=.*?\])+', self.file_content, re.DOTALL)
-        if board_info_block_match:
-            board_info_block = board_info_block_match.group(0)
-            # Ищем все BarCode в блоках [Board Properties]
-            barcodes = re.findall(r'\[Board Properties\].*?BarCode=(.*?)\n', board_info_block, re.DOTALL)
-            for barcode in barcodes:
-                barcode = barcode.strip().replace('"', '')
-                if barcode: # Проверяем только, что строка не пустая
-                    serial_numbers.append(barcode)
-        
-        self.parsed_data["Serial Number"] = ", ".join(serial_numbers) if serial_numbers else ""
-
+            self.parsed_data["vrc_ver"] = params.get("vrc_ver", "").strip('"')
+            self.parsed_data["ip"] = params.get("ip", "").strip('"')
+        else:
+            logger.warning("Блок ':cfg-nepara:' не найден в файле.")
+            
+        return self.parsed_data
 
     def _parse_key_value_pairs(self, text):
-        """Парсит пары ключ=значение из строки параметров."""
+        """
+        Парсит пары ключ=значение из строки параметров.
+        """
         pairs = {}
-        pattern = r'(\w+)\s*=\s*(?:(".*?"|\[.*?\]|\{.*?\}|[^\s,]+))(?:\s*,\s*|$)'
+        # Регулярное выражение для более надежного парсинга
+        # Захватываем ключ (\w+)
+        # Затем знак равенства =
+        # Затем значение, которое может быть:
+        # 1. Строка в двойных кавычках ("...")
+        # 2. Или любой текст, не содержащий запятую или новую строку, до следующего параметра или конца блока
+        # Используем (?:...) для не-захватывающей группы для разделителя
+        pattern = r'(\w+)\s*=\s*(?:(".*?")|([^,\n]+?))(?:\s*,\s*|(?=\n)|$)'
         
-        parts = []
-        in_quotes = False
-        start = 0
-        for i, char in enumerate(text):
-            if char == '"':
-                in_quotes = not in_quotes
-            elif char == ',' and not in_quotes:
-                parts.append(text[start:i])
-                start = i + 1
-        parts.append(text[start:])
+        for match in re.finditer(pattern, text, re.DOTALL):
+            key = match.group(1).strip()
+            # match.group(2) - для строк в кавычках, match.group(3) - для значений без кавычек
+            # Берем первое непустое значение из этих двух групп
+            value = match.group(2) if match.group(2) is not None else match.group(3)
+            
+            value = value.strip('"').strip() # Удаляем кавычки и лишние пробелы
 
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            match = re.match(r'(\w+)\s*=\s*(.*)', part)
-            if match:
-                key = match.group(1).strip()
-                value = match.group(2).strip()
-                pairs[key] = value
+            if not value:
+                value = ""
+            
+            pairs[key] = value
         return pairs
         
