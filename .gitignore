@@ -1,0 +1,53 @@
+# Временные файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+build/
+dist/
+.env
+venv/
+
+# Результаты сборки PyInstaller
+*.spec
+*.exe
+# Если вы собираете не --onefile, то PyInstaller создаст папку build и dist
+# Эти папки уже включены выше, но явное указание не повредит
+# В случае --onefile build и dist обычно создаются PyInstaller'ом
+
+# Лог-файлы
+logs/
+*.log
+Output/
+*.txt
+
+# Выходные файлы 
+Output/
+*.xlsx
+
+
+# Входные ZIP-архивы (если не хотите их версионировать)
+Input/
+*.zip
+
+# Инструменты IDE
+.idea/             # PyCharm / IntelliJ IDEA
+.vscode/           # Visual Studio Code
+*.sublime-project  # Sublime Text
+*.sublime-workspace
+.project           # Eclipse
+.classpath
+.settings/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Скрытые файлы ОС
+*~                 # Временные файлы, обычно создаваемые редакторами
+
